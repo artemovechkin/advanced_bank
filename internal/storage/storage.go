@@ -18,7 +18,16 @@ func New() *Storage {
 func (s *Storage) LoadAccounts() error {
 	bytes, err := os.ReadFile("accounts.json")
 	if err != nil {
+		if os.IsNotExist(err) {
+			slog.Info("accounts.json not found, starting with empty accounts")
+			return nil
+		}
 		return err
+	}
+
+	if len(bytes) == 0 {
+		// File exists but is empty
+		return nil
 	}
 
 	err = json.Unmarshal(bytes, &s.accounts)
