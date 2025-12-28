@@ -1,7 +1,7 @@
 package main
 
 import (
-	"advancedbank/handlers"
+	"advancedbank/internal/handlers"
 	"advancedbank/internal/storage"
 	"log/slog"
 	"os"
@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @title Bank API
-// jknkjnkj
 func main() {
 	store := storage.New()
 
