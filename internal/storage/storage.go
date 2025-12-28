@@ -2,63 +2,65 @@ package storage
 
 import (
 	"advancedbank/internal/models"
-	"encoding/json"
-	"log/slog"
-	"os"
+	"database/sql"
+
+	"modernc.org/sqlite"
+	_ "modernc.org/sqlite"
 )
 
 type Storage struct {
-	accounts map[string]*models.BankAccount
+	db *sql.DB
 }
 
 func New() *Storage {
-	return &Storage{make(map[string]*models.BankAccount)}
+	return &Storage{
+		db: OpenConnection(),
+	}
 }
 
-func (s *Storage) LoadAccounts() error {
-	bytes, err := os.ReadFile("accounts.json")
+func OpenConnection() *sql.DB {
+	db, err := sql.Open("sqlite", "bank.db")
 	if err != nil {
-		if os.IsNotExist(err) {
-			slog.Info("accounts.json not found, starting with empty accounts")
-			return nil
-		}
-		return err
+		panic(err)
 	}
 
-	if len(bytes) == 0 {
-		// File exists but is empty
-		return nil
+	if err = db.Ping(); err != nil {
+		panic(err)
 	}
 
-	err = json.Unmarshal(bytes, &s.accounts)
+	createTableAccounts := `
+	CREATE TABLE IF NOT EXISTS accounts (
+ 		email TEXT PRIMARY KEY,
+  		name TEXT,
+  		age int,
+  		balance float
+);`
+
+	_, err = db.Exec(createTableAccounts)
 	if err != nil {
-		return err
+		panic(err)
+	}
+
+	return db
+}
+
+func (s *Storage) GetAccount(email string) (account models.BankAccount, err error) {
+	err = s.db.QueryRow(`SELECT * FROM accounts WHERE email = ?`, email).Scan(
+		&account.Owner.Email, &account.Owner.Name, &account.Owner.Age, &account.Balance)
+	if err != nil {
+		return models.BankAccount{}, err
+	}
+
+	return account, nil
+}
+
+func (s *Storage) SetAccount(account models.BankAccount) *sqlite.Error {
+	queryInsert := `INSERT INTO accounts (email, name, age, balance) VALUES (?, ?, ?, ?);`
+
+	_, err := s.db.Exec(queryInsert, account.Owner.Email, account.Owner.Name, account.Owner.Age, account.Balance)
+	if err != nil {
+		return err.(*sqlite.Error)
 	}
 
 	return nil
-}
-
-func (s *Storage) SaveAccounts() {
-	bytes, err := json.MarshalIndent(s.accounts, "", "  ")
-	if err != nil {
-		slog.Error("failed to marshal accounts", "error", err)
-		return
-	}
-
-	err = os.WriteFile("accounts.json", bytes, os.ModePerm)
-	if err != nil {
-		slog.Error("failed to write file", "error", err)
-		return
-	}
-
-	slog.Info("saved accounts to file success")
-}
-
-func (s *Storage) GetAccount(email string) (*models.BankAccount, bool) {
-	account, exists := s.accounts[email]
-	return account, exists
-}
-
-func (s *Storage) SetAccount(email string, account *models.BankAccount) {
-	s.accounts[email] = account
 }

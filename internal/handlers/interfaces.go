@@ -1,10 +1,12 @@
 package handlers
 
-import "advancedbank/internal/models"
+import (
+	"advancedbank/internal/models"
+
+	"modernc.org/sqlite"
+)
 
 type IStorage interface {
-	LoadAccounts() error
-	SaveAccounts()
-	GetAccount(email string) (*models.BankAccount, bool)
-	SetAccount(email string, b *models.BankAccount)
+	GetAccount(email string) (models.BankAccount, error)
+	SetAccount(account models.BankAccount) *sqlite.Error
 }

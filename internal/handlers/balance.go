@@ -10,11 +10,11 @@ import (
 func (h *Handler) GetBalance(c *gin.Context) {
 	email := c.Param("email")
 
-	account, exists := h.store.GetAccount(email)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
-		return
-	}
+	account, _ := h.store.GetAccount(email)
+	//if !exists {
+	//	c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+	//	return
+	//}
 
 	c.JSON(http.StatusOK, gin.H{"balance": account.GetBalance()})
 }
@@ -22,11 +22,11 @@ func (h *Handler) GetBalance(c *gin.Context) {
 func (h *Handler) AmountOperations(c *gin.Context) {
 	email := c.Param("email")
 
-	account, exists := h.store.GetAccount(email)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
-		return
-	}
+	account, _ := h.store.GetAccount(email)
+	//if !exists {
+	//	c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+	//	return
+	//}
 
 	var req models.AmountOperationsRequest
 	err := c.ShouldBindJSON(&req)

@@ -14,27 +14,19 @@ import (
 func main() {
 	store := storage.New()
 
-	err := store.LoadAccounts()
-	if err != nil {
-		slog.Error("failed to load accounts from file", "error", err)
-		return
-	}
-
 	r := gin.Default()
 	h := handlers.New(store)
 	handlers.Init(r, h)
 
 	go r.Run(":8080")
 
-	Shutdown(store)
+	Shutdown()
 }
 
-func Shutdown(store *storage.Storage) {
+func Shutdown() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	slog.Info("shutting down...")
-	store.SaveAccounts()
 	slog.Info("shut down successfully")
 }

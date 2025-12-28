@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 func (h *Handler) CreateAccount(c *gin.Context) {
@@ -16,19 +17,22 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	_, exists := h.store.GetAccount(req.Email)
-	if exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
-		return
-	}
-
 	account := models.NewBankAccount(models.AccountOwner{
 		Name:  req.Name,
 		Age:   req.Age,
 		Email: req.Email,
 	}, req.InitialBalance)
 
-	h.store.SetAccount(account.Owner.Email, account)
+	sqliteErr := h.store.SetAccount(*account)
+	if sqliteErr != nil {
+		if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": sqliteErr.Error()})
+		return
+	}
 
 	c.Status(http.StatusCreated)
 }
@@ -36,11 +40,11 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 func (h *Handler) CloseAccount(c *gin.Context) {
 	email := c.Param("email")
 
-	account, exists := h.store.GetAccount(email)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
-		return
-	}
+	account, _ := h.store.GetAccount(email)
+	//if !exists {
+	//	c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+	//	return
+	//}
 
 	err := account.CloseAccount()
 	if err != nil {
