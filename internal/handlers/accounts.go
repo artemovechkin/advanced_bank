@@ -40,15 +40,21 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 func (h *Handler) CloseAccount(c *gin.Context) {
 	email := c.Param("email")
 
-	account, _ := h.store.GetAccount(email)
-	//if !exists {
-	//	c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
-	//	return
-	//}
+	account, err := h.store.GetAccount(email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "opened account not found"})
+		return
+	}
 
-	err := account.CloseAccount()
+	err = account.CloseAccount()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = h.store.UpdateAccount(account)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

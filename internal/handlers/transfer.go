@@ -38,5 +38,4 @@ func (h *Handler) Transfer(c *gin.Context) {
 		http.StatusOK,
 		gin.H{"message": fmt.Sprintf("transferred %.2f from %s to %s", req.Amount, req.EmailFrom, req.EmailTo)},
 	)
-
 }

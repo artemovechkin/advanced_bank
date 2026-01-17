@@ -9,4 +9,5 @@ import (
 type IStorage interface {
 	GetAccount(email string) (models.BankAccount, error)
 	SetAccount(account models.BankAccount) *sqlite.Error
+	UpdateAccount(account models.BankAccount) error
 }

@@ -11,16 +11,16 @@ type AccountOwner struct {
 }
 
 type BankAccount struct {
-	Owner   AccountOwner `json:"owner"`
-	Balance float64      `json:"balance"`
-	Closed  bool         `json:"closed"`
+	Owner    AccountOwner `json:"owner"`
+	Balance  float64      `json:"balance"`
+	IsActive bool         `json:"is_active"`
 }
 
 func NewBankAccount(owner AccountOwner, initialBalance float64) *BankAccount {
 	return &BankAccount{
-		Owner:   owner,
-		Balance: initialBalance,
-		Closed:  false,
+		Owner:    owner,
+		Balance:  initialBalance,
+		IsActive: true,
 	}
 }
 
@@ -29,7 +29,7 @@ func (ba *BankAccount) GetBalance() float64 {
 }
 
 func (ba *BankAccount) Deposit(amount float64) error {
-	if ba.Closed {
+	if !ba.IsActive {
 		return errors.New("account is closed")
 	}
 	if amount <= 0 {
@@ -40,7 +40,7 @@ func (ba *BankAccount) Deposit(amount float64) error {
 }
 
 func (ba *BankAccount) Withdraw(amount float64) error {
-	if ba.Closed {
+	if !ba.IsActive {
 		return errors.New("account is closed")
 	}
 	if amount <= 0 {
@@ -54,10 +54,10 @@ func (ba *BankAccount) Withdraw(amount float64) error {
 }
 
 func (ba *BankAccount) Transfer(amount float64, receiver *BankAccount) error {
-	if ba.Closed {
+	if !ba.IsActive {
 		return errors.New("sender account is closed")
 	}
-	if receiver.Closed {
+	if !receiver.IsActive {
 		return errors.New("receiver account is closed")
 	}
 	if amount <= 0 {
@@ -72,13 +72,13 @@ func (ba *BankAccount) Transfer(amount float64, receiver *BankAccount) error {
 }
 
 func (ba *BankAccount) CloseAccount() error {
-	if ba.Closed {
+	if !ba.IsActive {
 		return errors.New("account is already closed")
 	}
 	if ba.Balance != 0 {
 		return errors.New("cannot close account with non-zero balance")
 	}
-	ba.Closed = true
+	ba.IsActive = false
 	return nil
 }
 
