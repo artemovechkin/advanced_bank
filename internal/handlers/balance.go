@@ -19,7 +19,7 @@ func (h *Handler) GetBalance(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"balance": account.GetBalance()})
 }
 
-func (h *Handler) AmountOperations(c *gin.Context) {
+func (h *Handler) AmountOperation(c *gin.Context) {
 	email := c.Param("email")
 
 	account, err := h.store.GetAccount(email)
@@ -36,6 +36,13 @@ func (h *Handler) AmountOperations(c *gin.Context) {
 		return
 	}
 
+	// todo вынос логики в сервис
+	//err = h.service.AmountOperation(req.Operation, req.Amount)
+	//if err != nil {
+	//	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	//	return
+	//}
+
 	switch req.Operation {
 	case "withdraw":
 		err = account.Withdraw(req.Amount)
@@ -43,6 +50,13 @@ func (h *Handler) AmountOperations(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		err = h.store.UpdateAccount(account)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusCreated, gin.H{"status": "successfully withdrawn"})
 
 	case "deposit":
@@ -51,6 +65,13 @@ func (h *Handler) AmountOperations(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		err = h.store.UpdateAccount(account)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusCreated, gin.H{"status": "successfully deposited"})
 
 	default:

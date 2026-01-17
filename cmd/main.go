@@ -2,7 +2,9 @@ package main
 
 import (
 	"advancedbank/internal/handlers"
+	"advancedbank/internal/service"
 	"advancedbank/internal/storage"
+	"log"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,13 +14,20 @@ import (
 )
 
 func main() {
-	store := storage.New()
-
 	r := gin.Default()
-	h := handlers.New(store)
+
+	store := storage.New()
+	svc := service.New(store)
+	h := handlers.New(svc)
+
 	handlers.Init(r, h)
 
-	go r.Run(":8080")
+	go func() {
+		err := r.Run(":8080")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	Shutdown()
 }

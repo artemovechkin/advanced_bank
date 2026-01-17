@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	sqlite3 "modernc.org/sqlite/lib"
 )
 
 func (h *Handler) CreateAccount(c *gin.Context) {
@@ -17,20 +16,9 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	account := models.NewBankAccount(models.AccountOwner{
-		Name:  req.Name,
-		Age:   req.Age,
-		Email: req.Email,
-	}, req.InitialBalance)
-
-	sqliteErr := h.store.SetAccount(*account)
-	if sqliteErr != nil {
-		if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "account already exists"})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": sqliteErr.Error()})
+	customErr := h.service.CreateAccount(req)
+	if customErr != nil {
+		c.JSON(customErr.Status(), customErr.Error())
 		return
 	}
 
@@ -40,21 +28,9 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 func (h *Handler) CloseAccount(c *gin.Context) {
 	email := c.Param("email")
 
-	account, err := h.store.GetAccount(email)
+	err := h.service.CloseAccount(email)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "opened account not found"})
-		return
-	}
-
-	err = account.CloseAccount()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = h.store.UpdateAccount(account)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(err.Status(), err.Error())
 		return
 	}
 

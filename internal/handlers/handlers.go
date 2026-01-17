@@ -1,15 +1,28 @@
 package handlers
 
 import (
+	"advancedbank/internal/customerror"
+	"advancedbank/internal/models"
+	"advancedbank/internal/service"
+
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
-	store IStorage
+type IService interface {
+	CreateAccount(req models.CreateAccountRequest) customerror.Error
+	CloseAccount(email string) customerror.Error
 }
 
-func New(store IStorage) *Handler {
-	return &Handler{store: store}
+type Handler struct {
+	store service.IStorage // todo временное поле
+
+	service IService
+}
+
+func New(service IService) *Handler {
+	return &Handler{
+		service: service,
+	}
 }
 
 func Init(r *gin.Engine, h *Handler) {
@@ -17,7 +30,7 @@ func Init(r *gin.Engine, h *Handler) {
 	r.POST("/account/close/:email", h.CloseAccount)
 
 	r.GET("/balance/:email", h.GetBalance)
-	r.POST("/amount/:email", h.AmountOperations)
+	r.POST("/amount/:email", h.AmountOperation)
 
 	r.POST("/transfer", h.Transfer)
 }
