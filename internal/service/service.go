@@ -119,3 +119,47 @@ func (s *Service) AmountOperation(operation string, amount float64, account mode
 
 	return nil
 }
+
+func (s *Service) Transfer(req models.TransferRequest) customerror.Error {
+	senderAccount, customErr := s.store.GetAccount(req.EmailFrom)
+	if customErr != nil {
+		return &customerror.CustomError{
+			State:   http.StatusNotFound,
+			Message: fmt.Sprintf("opened account not found: %v", customErr.Error()),
+		}
+	}
+
+	receiverAccount, customErr := s.store.GetAccount(req.EmailTo)
+	if customErr != nil {
+		return &customerror.CustomError{
+			State:   http.StatusNotFound,
+			Message: fmt.Sprintf("opened account not found: %v", customErr.Error()),
+		}
+	}
+
+	err := senderAccount.Transfer(req.Amount, &receiverAccount)
+	if err != nil {
+		return &customerror.CustomError{
+			State:   http.StatusBadRequest,
+			Message: fmt.Sprintf("failed to transfer: %v", err.Error()),
+		}
+	}
+
+	err = s.store.UpdateAccount(receiverAccount)
+	if err != nil {
+		return &customerror.CustomError{
+			State:   http.StatusInternalServerError,
+			Message: fmt.Sprintf("failed to update account: %v", err.Error()),
+		}
+	}
+
+	err = s.store.UpdateAccount(senderAccount)
+	if err != nil {
+		return &customerror.CustomError{
+			State:   http.StatusInternalServerError,
+			Message: fmt.Sprintf("failed to update account: %v", err.Error()),
+		}
+	}
+
+	return nil
+}

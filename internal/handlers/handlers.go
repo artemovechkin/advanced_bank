@@ -14,6 +14,7 @@ type IService interface {
 	GetAccount(email string) (models.BankAccount, customerror.Error)
 
 	AmountOperation(operation string, amount float64, account models.BankAccount) customerror.Error
+	Transfer(req models.TransferRequest) customerror.Error
 }
 
 type Handler struct {

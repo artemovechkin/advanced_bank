@@ -16,33 +16,9 @@ func (h *Handler) Transfer(c *gin.Context) {
 		return
 	}
 
-	senderAccount, err := h.store.GetAccount(req.EmailFrom)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "opened account not found"})
-		return
-	}
-
-	receiverAccount, err := h.store.GetAccount(req.EmailTo)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "opened account not found"})
-		return
-	}
-
-	err = senderAccount.Transfer(req.Amount, &receiverAccount)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = h.store.UpdateAccount(receiverAccount)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = h.store.UpdateAccount(senderAccount)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	customErr := h.service.Transfer(req)
+	if customErr != nil {
+		c.JSON(customErr.Status(), gin.H{"error": customErr.Error()})
 		return
 	}
 
