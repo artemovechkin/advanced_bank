@@ -11,6 +11,9 @@ import (
 type IService interface {
 	CreateAccount(req models.CreateAccountRequest) customerror.Error
 	CloseAccount(email string) customerror.Error
+	GetAccount(email string) (models.BankAccount, customerror.Error)
+
+	AmountOperation(operation string, amount float64, account models.BankAccount) customerror.Error
 }
 
 type Handler struct {

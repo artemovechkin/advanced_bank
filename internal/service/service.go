@@ -76,3 +76,46 @@ func (s *Service) CloseAccount(email string) customerror.Error {
 
 	return nil
 }
+
+func (s *Service) GetAccount(email string) (models.BankAccount, customerror.Error) {
+	account, err := s.store.GetAccount(email)
+	if err != nil {
+		return models.BankAccount{}, &customerror.CustomError{
+			State:   http.StatusNotFound,
+			Message: fmt.Sprintf("failed to get account: %v", err.Error()),
+		}
+	}
+
+	return account, nil
+}
+
+func (s *Service) AmountOperation(operation string, amount float64, account models.BankAccount) customerror.Error {
+	switch operation {
+	case "withdraw":
+		err := account.Withdraw(amount)
+		if err != nil {
+			return &customerror.CustomError{
+				State:   http.StatusBadRequest,
+				Message: fmt.Sprintf("failed to withdraw: %v", err.Error()),
+			}
+		}
+	case "deposit":
+		err := account.Deposit(amount)
+		if err != nil {
+			return &customerror.CustomError{
+				State:   http.StatusBadRequest,
+				Message: fmt.Sprintf("failed to deposit: %v", err.Error()),
+			}
+		}
+	}
+
+	err := s.store.UpdateAccount(account)
+	if err != nil {
+		return &customerror.CustomError{
+			State:   http.StatusInternalServerError,
+			Message: fmt.Sprintf("failed to update account: %v", err.Error()),
+		}
+	}
+
+	return nil
+}

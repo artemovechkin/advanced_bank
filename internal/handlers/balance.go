@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"advancedbank/internal/models"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,7 @@ import (
 func (h *Handler) GetBalance(c *gin.Context) {
 	email := c.Param("email")
 
-	account, err := h.store.GetAccount(email)
+	account, err := h.service.GetAccount(email)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "opened account not found"})
 		return
@@ -21,60 +22,35 @@ func (h *Handler) GetBalance(c *gin.Context) {
 
 func (h *Handler) AmountOperation(c *gin.Context) {
 	email := c.Param("email")
-
-	account, err := h.store.GetAccount(email)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "opened account not found"})
+	account, customErr := h.service.GetAccount(email)
+	if customErr != nil {
+		c.JSON(customErr.Status(), customErr.Error())
 		return
 	}
 
 	var req models.AmountOperationsRequest
-
-	err = c.ShouldBindJSON(&req)
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// todo вынос логики в сервис
-	//err = h.service.AmountOperation(req.Operation, req.Amount)
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	//	return
-	//}
-
-	switch req.Operation {
-	case "withdraw":
-		err = account.Withdraw(req.Amount)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		err = h.store.UpdateAccount(account)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"status": "successfully withdrawn"})
-
-	case "deposit":
-		err = account.Deposit(req.Amount)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		err = h.store.UpdateAccount(account)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"status": "successfully deposited"})
-
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid operation"})
+	err = validateOperation(req.Operation)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
+
+	customErr = h.service.AmountOperation(req.Operation, req.Amount, account)
+	if customErr != nil {
+		c.JSON(customErr.Status(), customErr.Error())
+		return
+	}
+}
+
+func validateOperation(operation string) error {
+	if operation != "withdraw" && operation != "deposit" {
+		return errors.New("invalid operation")
+	}
+
+	return nil
 }
