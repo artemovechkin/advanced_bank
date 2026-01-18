@@ -38,6 +38,7 @@ func (h *Handler) AmountOperation(c *gin.Context) {
 	err = validateOperation(req.Operation)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	customErr = h.service.AmountOperation(req.Operation, req.Amount, account)

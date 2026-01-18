@@ -3,7 +3,6 @@ package handlers
 import (
 	"advancedbank/internal/customerror"
 	"advancedbank/internal/models"
-	"advancedbank/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,8 +17,6 @@ type IService interface {
 }
 
 type Handler struct {
-	store service.IStorage // todo временное поле
-
 	service IService
 }
 
