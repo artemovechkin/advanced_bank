@@ -24,7 +24,7 @@ func (h *Handler) AmountOperation(c *gin.Context) {
 	email := c.Param("email")
 	account, customErr := h.service.GetAccount(email)
 	if customErr != nil {
-		c.JSON(customErr.Status(), customErr.Error())
+		c.JSON(customErr.Status(), gin.H{"error": customErr.Error()})
 		return
 	}
 
@@ -42,7 +42,7 @@ func (h *Handler) AmountOperation(c *gin.Context) {
 
 	customErr = h.service.AmountOperation(req.Operation, req.Amount, account)
 	if customErr != nil {
-		c.JSON(customErr.Status(), customErr.Error())
+		c.JSON(customErr.Status(), gin.H{"error": customErr.Error()})
 		return
 	}
 }

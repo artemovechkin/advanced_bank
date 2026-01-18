@@ -18,7 +18,7 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 
 	customErr := h.service.CreateAccount(req)
 	if customErr != nil {
-		c.JSON(customErr.Status(), customErr.Error())
+		c.JSON(customErr.Status(), gin.H{"error": customErr.Error()})
 		return
 	}
 
@@ -30,7 +30,7 @@ func (h *Handler) CloseAccount(c *gin.Context) {
 
 	err := h.service.CloseAccount(email)
 	if err != nil {
-		c.JSON(err.Status(), err.Error())
+		c.JSON(err.Status(), gin.H{"error": err.Error()})
 		return
 	}
 
