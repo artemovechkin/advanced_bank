@@ -2,8 +2,10 @@ package storage
 
 import (
 	"advancedbank/internal/models"
+	"advancedbank/migrations"
 	"database/sql"
 
+	"github.com/pressly/goose/v3"
 	"modernc.org/sqlite"
 	_ "modernc.org/sqlite"
 )
@@ -19,7 +21,7 @@ func New() *Storage {
 }
 
 func OpenConnection() *sql.DB {
-	db, err := sql.Open("sqlite", "bank.db")
+	db, err := sql.Open("sqlite", "bank_new.db")
 	if err != nil {
 		panic(err)
 	}
@@ -28,24 +30,16 @@ func OpenConnection() *sql.DB {
 		panic(err)
 	}
 
-	createTableAccounts := `
-	CREATE TABLE IF NOT EXISTS accounts (
- 		email TEXT PRIMARY KEY,
-  		name TEXT,
-  		age int,
-  		balance float                               
-);`
+	goose.SetBaseFS(migrations.EmbedMigrations)
 
-	_, err = db.Exec(createTableAccounts)
-	if err != nil {
+	if err = goose.SetDialect("sqlite"); err != nil {
 		panic(err)
 	}
 
-	alterTableAccounts := `
-		ALTER TABLE accounts ADD COLUMN is_active BOOLEAN DEFAULT true;
-`
-	// todo переписать на миграции
-	db.Exec(alterTableAccounts)
+	err = goose.Up(db, ".")
+	if err != nil {
+		panic(err)
+	}
 
 	return db
 }
